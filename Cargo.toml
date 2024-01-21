@@ -6,3 +6,10 @@ edition = "2021"
 [dependencies]
 num-traits = { version = "0.2.17", default-features = false, features = ["libm"] }
 serde = { version = "1.0.195", default-features = false, features = ["derive"] }
+
+[features]
+default = ["libm"]
+libm = ["num-traits/libm"]
+std_math = ["num-traits/std"]
+std_serde = ["serde/std"]
+std = ["std_math", "std_serde"]

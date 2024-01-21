@@ -1,7 +1,28 @@
-#![no_std]
+// configure no_std if none of the std features are active
+#![cfg_attr(all(not(feature = "std_math"), not(feature = "std_serde")), no_std)]
 
+// ensure at least one of libm or std_math are enabled
+#[cfg(all(not(feature = "libm"), not(feature = "std_math")))]
+compile_error!("One of the 'libm' or 'std_math' features must be enabled.");
+
+// ensure libm and std_math can't be used concurrently
+#[cfg(all(feature = "libm", feature = "std_math"))]
+compile_error!(
+    "The 'libm' (enabled by default) and 'std_math' features cannot be enabled simultaneously."
+);
+
+// use the std version if available
+#[cfg(feature = "std")]
+use std::fmt::{Debug, Display};
+#[cfg(feature = "std")]
+use std::marker::PhantomData;
+
+// otherwise use the core version
+#[cfg(not(feature = "std"))]
 use core::fmt::{Debug, Display};
+#[cfg(not(feature = "std"))]
 use core::marker::PhantomData;
+
 use num_traits::Float;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
