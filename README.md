@@ -1,4 +1,4 @@
-# Floco 🛟 &emsp; [![Build Status]] [![Codecov Badge][Codecov Info]] [![Apache Badge][Apache Link]] [![MIT Badge][MIT Link]]
+# Floco 🛟 &emsp; ![Build Status] [![Codecov Badge]][Codecov Info] [![Apache Badge]][Apache Link] [![MIT Badge]][MIT Link]
 
 [Build Status]: https://github.com/rileyleff/floco/actions/workflows/rust.yml/badge.svg
 [Codecov Badge]: https://codecov.io/gh/RileyLeff/floco/graph/badge.svg?token=CEAG74DDK9
