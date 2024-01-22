@@ -1,3 +1,6 @@
+//! This is my rust crate floco, it's pretty sick
+
+#![warn(missing_docs)]
 // configure no_std if none of the std features are active
 #![cfg_attr(all(not(feature = "std_math"), not(feature = "std_serde")), no_std)]
 
@@ -28,10 +31,17 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// This is a doc?
 #[derive(Debug, PartialEq, PartialOrd)]
-pub struct Floco<F: Float + Debug, C: Constrained<F>>(F, PhantomData<C>);
+pub struct Floco<F, C>(F, PhantomData<C>)
+where
+    F: Float + Debug,
+    C: Constrained<F>;
 
 /// This is a doc?
-impl<F: Float + Debug, C: Constrained<F>> Floco<F, C> {
+impl<F, C> Floco<F, C>
+where
+    F: Float + Debug,
+    C: Constrained<F>,
+{
     fn get(&self) -> F {
         self.0
     }
@@ -71,13 +81,20 @@ where
     }
 }
 
-impl<F: Float + Debug, C: Constrained<F>> Default for Floco<F, C> {
+impl<F, C> Default for Floco<F, C>
+where
+    F: Float + Debug,
+    C: Constrained<F>,
+{
     fn default() -> Self {
         Floco::<F, C>(<C as Constrained<F>>::get_default(), PhantomData)
     }
 }
 
-impl<C: Constrained<f32>> TryFrom<f32> for Floco<f32, C> {
+impl<C> TryFrom<f32> for Floco<f32, C>
+where
+    C: Constrained<f32>,
+{
     type Error = C::Error;
 
     fn try_from(value: f32) -> Result<Self, Self::Error> {
@@ -85,7 +102,10 @@ impl<C: Constrained<f32>> TryFrom<f32> for Floco<f32, C> {
     }
 }
 
-impl<C: Constrained<f64>> TryFrom<f64> for Floco<f64, C> {
+impl<C> TryFrom<f64> for Floco<f64, C>
+where
+    C: Constrained<f64>,
+{
     type Error = C::Error;
 
     fn try_from(value: f64) -> Result<Self, Self::Error> {
@@ -93,17 +113,26 @@ impl<C: Constrained<f64>> TryFrom<f64> for Floco<f64, C> {
     }
 }
 
-pub trait Constrained<F: Float + Debug>: Sized {
+/// TODO: doc this
+pub trait Constrained<F>: Sized
+where
+    F: Float + Debug,
+{
+    /// TODO: doc this
     type Error: Debug + Display;
 
+    /// TODO: doc this
     fn is_valid(value: F) -> bool;
 
+    /// TODO: doc this
     fn emit_error(value: F) -> Self::Error;
 
+    /// TODO: doc this
     fn get_default() -> F {
         F::zero()
     }
 
+    /// TODO: doc this
     fn try_new(value: F) -> Result<Floco<F, Self>, Self::Error> {
         if Self::is_valid(value) {
             Ok(Floco::<F, Self>(value, PhantomData))
