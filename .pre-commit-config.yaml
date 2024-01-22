@@ -5,3 +5,11 @@ repos:
       - id: cargo-check
       - id: fmt
       - id: clippy
+  - repo: local
+    hooks:
+      - id: cargo-readme
+        name: cargo-readme
+        entry: cargo readme > README.md
+        language: script
+        files: \.rs$
+      
