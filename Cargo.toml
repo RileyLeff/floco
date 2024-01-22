@@ -2,6 +2,14 @@
 name = "floco"
 version = "0.1.0"
 edition = "2021"
+description = "Floco validates floats against arbitrary constraints."
+documentation = "rileyleff.com"
+readme = "README.md"
+homepage = "rileyleff.com"
+repository = "https://github.com/RileyLeff/floco"
+license = "MIT OR Apache-2.0"
+keywords = ["float", "validation", "wrapper", "utility"]
+categories = ["no-std", "mathematics", "development-tools", "data-structures"]
 
 [dependencies]
 num-traits = { version = "0.2.17", default-features = false, features = ["libm"] }

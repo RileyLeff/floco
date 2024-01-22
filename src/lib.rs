@@ -1,4 +1,8 @@
-//! This is my rust crate floco, it's pretty sick
+//! Floco validates ***flo***ats against user-defined ***co***nstraints.
+//!
+//! ---
+//!
+//! Blah Blah Docs Go Here
 
 #![warn(missing_docs)]
 // configure no_std if none of the std features are active

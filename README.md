@@ -8,4 +8,8 @@
 [Apache Badge]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
 [Apache Link]: https://opensource.org/licenses/Apache-2.0
 
-Floco is a rust crate that provides a wrapper type for ***flo***ating point numbers with user-defined ***co***nstraints.
+Floco validates ***flo***ats against arbitrary ***co***nstraints.
+
+---
+
+Blah Blah Docs Go Here
