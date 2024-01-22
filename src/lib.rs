@@ -119,7 +119,6 @@ mod tests {
     use core::fmt::Debug;
     use half::f16;
     use num_traits::Float;
-    use serde::{Deserialize, Serialize};
 
     struct Foo;
 
@@ -134,7 +133,7 @@ mod tests {
             value.is_normal() && value.is_sign_positive()
         }
 
-        fn emit_error(value: f64) -> Self::Error {
+        fn emit_error(_value: f64) -> Self::Error {
             "wow this is a bad foo"
         }
     }
@@ -152,7 +151,7 @@ mod tests {
             value.is_normal() && value.is_sign_negative()
         }
 
-        fn emit_error(value: f64) -> Self::Error {
+        fn emit_error(_value: f64) -> Self::Error {
             "yikes this is a bad bar"
         }
     }
@@ -165,7 +164,7 @@ mod tests {
             value.is_sign_positive()
         }
 
-        fn emit_error(value: F) -> Self::Error {
+        fn emit_error(_value: F) -> Self::Error {
             "omg this is a bad qux"
         }
     }
