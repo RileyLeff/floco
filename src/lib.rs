@@ -35,6 +35,11 @@ impl<F: Float + Debug, C: Constrained<F>> Floco<F, C> {
     fn get(&self) -> F {
         self.0
     }
+
+    #[allow(dead_code)]
+    fn try_new(value: F) -> Result<Self, C::Error> {
+        C::try_new(value)
+    }
 }
 
 /// This is a doc?
@@ -66,15 +71,9 @@ where
     }
 }
 
-impl<C: Constrained<f32>> Default for Floco<f32, C> {
+impl<F: Float + Debug, C: Constrained<F>> Default for Floco<F, C> {
     fn default() -> Self {
-        Floco::<f32, C>(<C as Constrained<f32>>::DEFAULT_F32, PhantomData)
-    }
-}
-
-impl<C: Constrained<f64>> Default for Floco<f64, C> {
-    fn default() -> Self {
-        Floco::<f64, C>(<C as Constrained<f64>>::DEFAULT_F64, PhantomData)
+        Floco::<F, C>(<C as Constrained<F>>::get_default(), PhantomData)
     }
 }
 
@@ -97,13 +96,13 @@ impl<C: Constrained<f64>> TryFrom<f64> for Floco<f64, C> {
 pub trait Constrained<F: Float + Debug>: Sized {
     type Error: Debug + Display;
 
-    const DEFAULT_F32: f32;
-
-    const DEFAULT_F64: f64;
-
     fn is_valid(value: F) -> bool;
 
     fn emit_error(value: F) -> Self::Error;
+
+    fn get_default() -> F {
+        F::zero()
+    }
 
     fn try_new(value: F) -> Result<Floco<F, Self>, Self::Error> {
         if Self::is_valid(value) {
@@ -116,9 +115,109 @@ pub trait Constrained<F: Float + Debug>: Sized {
 
 #[cfg(test)]
 mod tests {
+    use crate::{Constrained, Floco};
+    use core::fmt::Debug;
+    use half::f16;
+    use num_traits::Float;
+    use serde::{Deserialize, Serialize};
+
+    struct Foo;
+
+    impl Constrained<f64> for Foo {
+        type Error = &'static str;
+
+        fn get_default() -> f64 {
+            99.9f64
+        }
+
+        fn is_valid(value: f64) -> bool {
+            value.is_normal() && value.is_sign_positive()
+        }
+
+        fn emit_error(value: f64) -> Self::Error {
+            "wow this is a bad foo"
+        }
+    }
+
+    struct Bar;
+
+    impl Constrained<f64> for Bar {
+        type Error = &'static str;
+
+        fn get_default() -> f64 {
+            -50.0f64
+        }
+
+        fn is_valid(value: f64) -> bool {
+            value.is_normal() && value.is_sign_negative()
+        }
+
+        fn emit_error(value: f64) -> Self::Error {
+            "yikes this is a bad bar"
+        }
+    }
+
+    struct Qux;
+    impl<F: Float + Debug> Constrained<F> for Qux {
+        type Error = &'static str;
+
+        fn is_valid(value: F) -> bool {
+            value.is_sign_positive()
+        }
+
+        fn emit_error(value: F) -> Self::Error {
+            "omg this is a bad qux"
+        }
+    }
 
     #[test]
-    fn it_works() {
-        assert_eq!(4, 4);
+    fn floco_denies_invalid_f64() {
+        // Foo is restricted to positive normal f64s
+        let should_be_error = Foo::try_new(-9.2);
+        assert!(should_be_error.is_err())
+    }
+
+    #[test]
+    fn default_from_marker_works() {
+        assert_eq!(Floco::<f64, Bar>::default().get(), -50.0f64)
+    }
+
+    #[test]
+    fn deserialization_respects_floco_validation() {
+        let to_be_deserialized = "42.1";
+        let should_be_error: Result<(Floco<f64, Bar>, usize), _> =
+            serde_json_core::from_str(to_be_deserialized);
+        assert!(should_be_error.is_err())
+    }
+
+    #[test]
+    fn serialization_grabs_inner_float() {
+        let to_be_serialized = Foo::try_new(42.0f64).unwrap();
+        let mut buff = [0u8; 4];
+        let expected_buff: [u8; 4] = [52, 50, 46, 48];
+        let _ = serde_json_core::to_slice(&to_be_serialized, &mut buff).unwrap();
+        assert_eq!(expected_buff, buff)
+    }
+
+    #[test]
+    fn tryfrom_works_with_floco() {
+        let lorem: f64 = 2.1;
+        let ipsum = Floco::<f64, Foo>::try_from(lorem).unwrap();
+        let sit = Foo::try_new(lorem).unwrap();
+        assert_eq!(ipsum.get(), sit.get())
+    }
+
+    #[test]
+    fn tryinto_works_with_floco() {
+        let lorem: f64 = 2.1;
+        let ipsum: Result<Floco<f64, Bar>, <Bar as Constrained<f64>>::Error> = lorem.try_into();
+        assert!(ipsum.is_err())
+    }
+
+    #[test]
+    fn exotic_float_works_on_generic_marker_impl() {
+        let lorem: f16 = f16::ONE;
+        let ipsum = Qux::try_new(lorem);
+        assert!(ipsum.is_ok())
     }
 }
