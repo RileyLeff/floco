@@ -33,13 +33,13 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Floco<F, C>(F, PhantomData<C>)
 where
-    F: Float + Debug,
+    F: Float,
     C: Constrained<F>;
 
 /// This is a doc?
 impl<F, C> Floco<F, C>
 where
-    F: Float + Debug,
+    F: Float,
     C: Constrained<F>,
 {
     fn get(&self) -> F {
@@ -55,7 +55,7 @@ where
 /// This is a doc?
 impl<F, C> Serialize for Floco<F, C>
 where
-    F: Float + Debug + Serialize,
+    F: Float + Serialize,
     C: Constrained<F>,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -69,7 +69,7 @@ where
 /// This is a doc?
 impl<'de, F, C> Deserialize<'de> for Floco<F, C>
 where
-    F: Float + Debug + Deserialize<'de>,
+    F: Float + Deserialize<'de>,
     C: Constrained<F>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -83,7 +83,7 @@ where
 
 impl<F, C> Default for Floco<F, C>
 where
-    F: Float + Debug,
+    F: Float,
     C: Constrained<F>,
 {
     fn default() -> Self {
@@ -116,7 +116,7 @@ where
 /// TODO: doc this
 pub trait Constrained<F>: Sized
 where
-    F: Float + Debug,
+    F: Float,
 {
     /// TODO: doc this
     type Error: Debug + Display;
