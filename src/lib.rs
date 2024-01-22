@@ -119,7 +119,7 @@ where
     F: Float,
 {
     /// TODO: doc this
-    type Error: Debug + Display;
+    type Error: Display;
 
     /// TODO: doc this
     fn is_valid(value: F) -> bool;
