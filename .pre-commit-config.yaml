@@ -9,7 +9,5 @@ repos:
     hooks:
       - id: cargo-readme
         name: cargo-readme
-        entry: cargo readme > README.md
-        language: script
-        files: \.rs$
-      
+        entry: echo hi
+        language: system

@@ -1,8 +1,84 @@
 //! Floco validates ***flo***ats against user-defined ***co***nstraints.
 //!
-//! ---
+//! # Quick Start
 //!
-//! Blah Blah Docs Go Here
+//! ```
+//! use Floco::{Floco, Constrained};
+//!
+//! // We want to represent a value as f64, but we don't want to allow:
+//! //      - values below 5.0f64
+//! //      - values above 7.2f64
+//!
+//! // We define an empty struct.
+//! // This won't contain data, but will contain validation criteria in its impl.
+//! Struct Foo;
+//!
+//! // The Constrained trait defines the above constraints, an error type, and a default value.
+//! impl Constrained<f64> for Foo {
+//!     
+//!     type Error = &'static str;
+//!     
+//!     fn is_valid(value: f64) -> bool {
+//!         value >= 5.0f64 && value <= 7.2f64
+//!     }
+//!
+//!     fn emit_error(_value: f64) -> Self::Error {
+//!         "yikes this is a bad foo"
+//!     }
+//!     
+//!     // Optionally, you can set a custom default.
+//!     // Floco::<F, YourType>::Default will respect the default value impl for YourType.
+//!     fn get_default() -> f64 {
+//!         5.2f64
+//!      }
+//!
+//! // Now we can use Foo to constrain a Floco
+//! let this_will_be_ok = Floco::<f64, Foo>::try_new(6.8);
+//! let this_will_be_err = Floco::<f64, Foo>::try_new(4.2);
+//!
+//! ```
+//!
+//! # Overview
+//!
+//! This crate provides a struct that wraps a floating-point number alongside a PhantomData marker
+//! type. The marker type defines arbitrary validation conditions for the inner float.
+//! These validation conditions are invoked during construction, conversion, and deserialization.
+//!
+//! The marker type also provides an Error type and an optional default value (defaults to zero).
+//!
+//! Floco is no_std compatible by default, but has optional support for the standard library behind
+//! a feature flag. This doesn't add any functionality, just changes math ops from libm to std and
+//! changes the errors from thiserror-core to thiserror. Floco should compile on stable if std is
+//! enabled, but will require the [error_in_core][`eiclink`] feature for no_std builds.
+//!
+//! Floco is compatible with any type that implements the [float][`ntFloatlink`] trait from
+//! the num_traits crate, though TryFrom conversions are implemented from f32 and f64 for
+//! convenience.
+//!
+//! # Roadmap
+//! - At some point I intend to implement the ops traits on the Floco struct.
+//! - I want to create a similar struct that also contains generic [uom][`uomlink`] dimensions, but might just put that in a separate crate.
+//! - Not sure what to do with the Copy trait. Need to think that through.
+//!
+//! # Alternative / Related Crates
+//! - [prae][`PraeLink`] uses a macro to create distinct types rather than making a single type generic across arbitrary marker impls. Prae is incompatible with no_std.
+//! - [tightness][`TightnessLink`] is a predecessor to prae.
+//! - [typed_floats][`TypedFloatLink`] provides 12 useful pre-made restricted float types. See the useful "Similar crates" section at the end of the TypedFloats readme.
+//!
+//! # Inspired By
+//! - [Tightness Driven Development in Rust][`TightnessPost`]
+//! - [this stackoverflow comment][`SOComment`]
+//! - [this reddit comment][`RedditComment`]
+//!
+//! [`PraeLink`]: https://github.com/teenjuna/prae
+//! [`TightnessLink`]: https://github.com/PabloMansanet/tightness
+//! [`TypedFloatLink`]: https://github.com/tdelmas/typed_floats
+//! [`TightnessPost`]: https://www.ecorax.net/tightness/
+//! [`RedditComment`]: https://www.reddit.com/r/rust/comments/abmilm/bounded_numeric_types/ed1fs0f/
+//! [`SOComment`]: https://stackoverflow.com/questions/57440412/implementing-constructor-function-in-rust-trait#comment101360200_57440412
+//! [`eiclink`]:  https://github.com/rust-lang/rust/issues/103765
+//! [`ntFloatlink`]: https://docs.rs/num-traits/latest/num_traits/float/trait.Float.html
+//! [`uomlink`]: https://github.com/iliekturtles/uom
 
 #![warn(missing_docs)]
 // configure no_std if none of the std features are active
@@ -33,23 +109,25 @@ use core::marker::PhantomData;
 use num_traits::Float;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-/// This is a doc?
-#[derive(Debug, PartialEq, PartialOrd)]
-pub struct Floco<F, C>(F, PhantomData<C>)
+/// A wrapper type that contains a floating point value and a PhantomData marker that implements the [Constrained] trait.
+/// The marker type's implementation determines whether the float value is valid to construct an instance of a Floco.
+#[derive(Debug)]
+pub struct Floco<F, C>(pub F, pub PhantomData<C>)
 where
     F: Float,
     C: Constrained<F>;
 
-/// This is a doc?
 impl<F, C> Floco<F, C>
 where
     F: Float,
     C: Constrained<F>,
 {
+    /// Extracts the inner float value from a Floco wrapper instance.
     fn get(&self) -> F {
         self.0
     }
 
+    /// Fallible constructor. Equivalent to the try_new in the marker type's impl.
     #[allow(dead_code)]
     fn try_new(value: F) -> Result<Self, C::Error> {
         C::try_new(value)
@@ -62,6 +140,7 @@ where
     F: Float + Serialize,
     C: Constrained<F>,
 {
+    /// Serializing a Floco object extracts the inner float.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -76,6 +155,8 @@ where
     F: Float + Deserialize<'de>,
     C: Constrained<F>,
 {
+    /// Deserializing a number into a Floco instance activates the constraining type's validity check.
+    /// Will return a Result<Err> if the validity criteria are not met.
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -90,11 +171,15 @@ where
     F: Float,
     C: Constrained<F>,
 {
+    /// Default values are also grabbed from the marker implementation.
+    /// The default impl is zero, as in f32 and f64.
+    /// This crate uses a default impl for the Default trait instead of looking for hard-coded const values to accomodate exotically-sized floats.
     fn default() -> Self {
         Floco::<F, C>(<C as Constrained<F>>::get_default(), PhantomData)
     }
 }
 
+/// Convenince impl of TryFrom for f32-based conversions.
 impl<C> TryFrom<f32> for Floco<f32, C>
 where
     C: Constrained<f32>,
@@ -106,6 +191,7 @@ where
     }
 }
 
+/// Convenince impl of TryFrom for f64-based conversions.
 impl<C> TryFrom<f64> for Floco<f64, C>
 where
     C: Constrained<f64>,
@@ -117,7 +203,8 @@ where
     }
 }
 
-/// TODO: doc this
+/// Defines valid conditions and errors for a Floco marker type.
+/// Also has overridable default impls for a fallible constructor and a default value.
 pub trait Constrained<F>: Sized
 where
     F: Float,

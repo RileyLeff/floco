@@ -2,7 +2,7 @@
 name = "floco"
 version = "0.1.0"
 edition = "2021"
-description = "Floco validates floats against arbitrary constraints."
+description = "Floco validates floats against constraints."
 documentation = "rileyleff.com"
 readme = "README.md"
 homepage = "rileyleff.com"
