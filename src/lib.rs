@@ -149,7 +149,7 @@ where
     }
 }
 
-/// This is a doc?
+/// Constrained deserialization, with constraints checked against the marker type.
 impl<'de, F, C> Deserialize<'de> for Floco<F, C>
 where
     F: Float + Deserialize<'de>,

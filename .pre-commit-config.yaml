@@ -9,8 +9,6 @@ repos:
     hooks:
       - id: cargo-readme
         name: cargo-readme
-        entry: cargo readme
+        entry: just generate-readme
         language: system
-        args: [">", "README.md"]
-        types: [rust]
         pass_filenames: false
