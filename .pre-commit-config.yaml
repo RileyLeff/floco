@@ -12,3 +12,8 @@ repos:
         entry: just generate-readme
         language: system
         pass_filenames: false
+      - id: cargo-doc
+        name: cargo-doc
+        entry: just generate-doc
+        language: system
+        pass_filenames: false
