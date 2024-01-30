@@ -3,7 +3,7 @@
 //! # Quick Start
 //!
 //! ```
-//! use Floco::{Floco, Constrained};
+//! use floco::{Floco, Constrained};
 //!
 //! // We want to represent a value as f64, but we don't want to allow:
 //! //      - values below 5.0f64
@@ -11,7 +11,7 @@
 //!
 //! // We define an empty struct.
 //! // This won't contain data, but will contain validation criteria in its impl.
-//! Struct Foo;
+//! struct Foo;
 //!
 //! // The Constrained trait defines the above constraints, an error type, and a default value.
 //! impl Constrained<f64> for Foo {
@@ -31,6 +31,7 @@
 //!     fn get_default() -> f64 {
 //!         5.2f64
 //!      }
+//! }
 //!
 //! // Now we can use Foo to constrain a Floco
 //! let this_will_be_ok = Floco::<f64, Foo>::try_new(6.8);
@@ -52,11 +53,12 @@
 //! enabled, but will require the [error_in_core][`eiclink`] feature for no_std builds.
 //!
 //! Floco is compatible with any type that implements the [float][`ntFloatlink`] trait from
-//! the num_traits crate, though TryFrom conversions are implemented from f32 and f64 for
+//! the num_traits crate. TryFrom conversions are implemented from f32 and f64 for
 //! convenience.
 //!
 //! # Roadmap
 //! - At some point I intend to implement the ops traits on the Floco struct.
+//! - At some point I intend to add a macro to reduce the newtype boilerplate.
 //! - I want to create a similar struct that also contains generic [uom][`uomlink`] dimensions, but might just put that in a separate crate.
 //! - Not sure what to do with the Copy trait. Need to think that through.
 //!
@@ -123,13 +125,13 @@ where
     C: Constrained<F>,
 {
     /// Extracts the inner float value from a Floco wrapper instance.
-    fn get(&self) -> F {
+    pub fn get(&self) -> F {
         self.0
     }
 
     /// Fallible constructor. Equivalent to the try_new in the marker type's impl.
     #[allow(dead_code)]
-    fn try_new(value: F) -> Result<Self, C::Error> {
+    pub fn try_new(value: F) -> Result<Self, C::Error> {
         C::try_new(value)
     }
 }
