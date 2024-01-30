@@ -5,7 +5,7 @@ edition = "2021"
 description = "Floco validates floats against constraints."
 documentation = "rileyleff.com"
 readme = "README.md"
-homepage = "https://github.com/RileyLeff/floco?tab=readme-ov-file"
+homepage = "https://github.com/RileyLeff/floco"
 repository = "https://github.com/RileyLeff/floco"
 license = "MIT OR Apache-2.0"
 keywords = ["float", "validation", "wrapper", "utility"]
