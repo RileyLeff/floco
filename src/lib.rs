@@ -108,7 +108,7 @@ use core::fmt::{Debug, Display};
 #[cfg(not(feature = "std"))]
 use core::marker::PhantomData;
 
-use num_traits::Float;
+use floatd::FloatD;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// A wrapper type that contains a floating point value and a PhantomData marker that implements the [Constrained] trait.
@@ -116,12 +116,12 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[derive(Debug)]
 pub struct Floco<F, C>(pub F, pub PhantomData<C>)
 where
-    F: Float,
+    F: FloatD,
     C: Constrained<F>;
 
 impl<F, C> Floco<F, C>
 where
-    F: Float,
+    F: FloatD,
     C: Constrained<F>,
 {
     /// Extracts the inner float value from a Floco wrapper instance.
@@ -139,7 +139,7 @@ where
 /// This is a doc?
 impl<F, C> Serialize for Floco<F, C>
 where
-    F: Float + Serialize,
+    F: FloatD + Serialize,
     C: Constrained<F>,
 {
     /// Serializing a Floco object extracts the inner float.
@@ -154,7 +154,7 @@ where
 /// Constrained deserialization, with constraints checked against the marker type.
 impl<'de, F, C> Deserialize<'de> for Floco<F, C>
 where
-    F: Float + Deserialize<'de>,
+    F: FloatD + Deserialize<'de>,
     C: Constrained<F>,
 {
     /// Deserializing a number into a Floco instance activates the constraining type's validity check.
@@ -170,7 +170,7 @@ where
 
 impl<F, C> Default for Floco<F, C>
 where
-    F: Float,
+    F: FloatD,
     C: Constrained<F>,
 {
     /// Default values are also grabbed from the marker implementation.
@@ -209,7 +209,7 @@ where
 /// Also has overridable default impls for a fallible constructor and a default value.
 pub trait Constrained<F>: Sized
 where
-    F: Float,
+    F: FloatD,
 {
     /// TODO: doc this
     type Error: Display;
@@ -239,8 +239,8 @@ where
 mod tests {
     use crate::{Constrained, Floco};
     use core::fmt::Debug;
+    use floatd::FloatD;
     use half::f16;
-    use num_traits::Float;
 
     struct Foo;
 
@@ -279,7 +279,7 @@ mod tests {
     }
 
     struct Qux;
-    impl<F: Float + Debug> Constrained<F> for Qux {
+    impl<F: FloatD + Debug> Constrained<F> for Qux {
         type Error = &'static str;
 
         fn is_valid(value: F) -> bool {
