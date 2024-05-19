@@ -226,21 +226,21 @@ pub trait Constrained<F>: Sized
 where
     F: FloatD,
 {
-    /// TODO: doc this
+    /// For example, one could use &str, anyhow, or a thiserror enum.
     type Error: Display;
 
-    /// TODO: doc this
+    /// Function to determine whether a value is valid.
     fn is_valid(value: F) -> bool;
 
-    /// TODO: doc this
+    /// Define the error behavior when values do not meet the constraint criteria.
     fn emit_error(value: F) -> Self::Error;
 
-    /// TODO: doc this
+    /// Define a default value for a constraint type.
     fn get_default() -> F {
         F::zero()
     }
 
-    /// TODO: doc this
+    /// Fallible constructor for a Floco of this constraint type.
     fn try_new(value: F) -> Result<Floco<F, Self>, Self::Error> {
         if Self::is_valid(value) {
             Ok(Floco::<F, Self>(value, PhantomData))
