@@ -356,4 +356,25 @@ mod tests {
         let ipsum = Qux::try_new(lorem);
         assert!(ipsum.is_ok())
     }
+
+    #[test]
+    fn checked_mutability_works() {
+        let mut ipsum = Qux::try_new(1.0f64).unwrap();
+        let _x = ipsum.mutate(2.0f64);
+        assert!(ipsum.0 == 2.0f64);
+    }
+
+    #[test]
+    fn checked_mutability_catches_errors() {
+        let mut ipsum = Qux::try_new(1.0f64).unwrap();
+        let x = ipsum.mutate(-2.0f64);
+        assert!(x.is_err());
+    }
+
+    #[test]
+    fn unchecked_mutability_works() {
+        let mut ipsum = Qux::try_new(1.0f64).unwrap();
+        let _x = ipsum.mutate_unchecked(2.0f64);
+        assert!(ipsum.0 == 2.0f64);
+    }
 }
