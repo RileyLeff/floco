@@ -129,6 +129,21 @@ where
         self.0
     }
 
+    /// Updates a floco's inner value if the new value is deemed valid.
+    pub fn mutate(&mut self, new_val: F) -> Result<(), C::Error> {
+        if C::is_valid(new_val) {
+            self.0 = new_val;
+            Ok(())
+        } else {
+            Err(C::emit_error(new_val))
+        }
+    }
+
+    /// Updates a floco's inner value without checking for validity. Use wisely.
+    pub fn mutate_unchecked(&mut self, new_val: F) {
+        self.0 = new_val;
+    }
+
     /// Fallible constructor. Equivalent to the try_new in the marker type's impl.
     #[allow(dead_code)]
     pub fn try_new(value: F) -> Result<Self, C::Error> {
@@ -136,7 +151,7 @@ where
     }
 }
 
-/// This is a doc?
+/// Serialization across arbitrary constraints.
 impl<F, C> Serialize for Floco<F, C>
 where
     F: FloatD + Serialize,
