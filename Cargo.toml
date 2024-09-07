@@ -12,7 +12,6 @@ keywords = ["float", "validation", "wrapper", "utility"]
 categories = ["no-std", "mathematics", "development-tools", "data-structures"]
 
 [dependencies]
-floatd = "0.1.0"
 num-traits = { version = "0.2.17", default-features = false, features = ["libm"] }
 serde = { version = "1.0.195", default-features = false, features = ["derive"] }
 
@@ -23,6 +22,6 @@ half = {version = "2.3.1", features = ["num-traits"]}
 [features]
 default = ["libm"]
 libm = ["num-traits/libm"]
-std_math = ["num-traits/std", "floatd/std"]
+std_math = ["num-traits/std"]
 std_serde = ["serde/std"]
 std = ["std_math", "std_serde"]

@@ -42,19 +42,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
 
 [[package]]
-name = "floatd"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34287e0aad4413b337b7d3055a48deb7e409251e8cee2e023c70e7b59e0ef321"
-dependencies = [
- "num-traits",
-]
-
-[[package]]
 name = "floco"
 version = "0.1.2"
 dependencies = [
- "floatd",
  "half",
  "num-traits",
  "serde",
