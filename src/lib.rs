@@ -108,20 +108,21 @@ use core::fmt::{Debug, Display};
 #[cfg(not(feature = "std"))]
 use core::marker::PhantomData;
 
-use floatd::FloatD;
+use num_traits::Float;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// A wrapper type that contains a floating point value and a PhantomData marker that implements the [Constrained] trait.
+///
 /// The marker type's implementation determines whether the float value is valid to construct an instance of a Floco.
 #[derive(Debug)]
 pub struct Floco<F, C>(pub F, pub PhantomData<C>)
 where
-    F: FloatD,
+    F: Float + Display + Debug,
     C: Constrained<F>;
 
 impl<F, C> Floco<F, C>
 where
-    F: FloatD,
+    F: Float + Display + Debug,
     C: Constrained<F>,
 {
     /// Extracts the inner float value from a Floco wrapper instance.
@@ -154,7 +155,7 @@ where
 /// Serialization across arbitrary constraints.
 impl<F, C> Serialize for Floco<F, C>
 where
-    F: FloatD + Serialize,
+    F: Float + Display + Debug + Serialize,
     C: Constrained<F>,
 {
     /// Serializing a Floco object extracts the inner float.
@@ -169,7 +170,7 @@ where
 /// Constrained deserialization, with constraints checked against the marker type.
 impl<'de, F, C> Deserialize<'de> for Floco<F, C>
 where
-    F: FloatD + Deserialize<'de>,
+    F: Float + Display + Debug + Deserialize<'de>,
     C: Constrained<F>,
 {
     /// Deserializing a number into a Floco instance activates the constraining type's validity check.
@@ -185,7 +186,7 @@ where
 
 impl<F, C> Default for Floco<F, C>
 where
-    F: FloatD,
+    F: Float + Display + Debug,
     C: Constrained<F>,
 {
     /// Default values are also grabbed from the marker implementation.
@@ -224,7 +225,7 @@ where
 /// Also has overridable default impls for a fallible constructor and a default value.
 pub trait Constrained<F>: Sized
 where
-    F: FloatD,
+    F: Float + Display + Debug,
 {
     /// For example, one could use &str, anyhow, or a thiserror enum.
     type Error: Display;
@@ -254,8 +255,9 @@ where
 mod tests {
     use crate::{Constrained, Floco};
     use core::fmt::Debug;
-    use floatd::FloatD;
+    use core::fmt::Display;
     use half::f16;
+    use num_traits::Float;
 
     struct Foo;
 
@@ -294,7 +296,7 @@ mod tests {
     }
 
     struct Qux;
-    impl<F: FloatD + Debug> Constrained<F> for Qux {
+    impl<F: Float + Display + Debug> Constrained<F> for Qux {
         type Error = &'static str;
 
         fn is_valid(value: F) -> bool {
