@@ -1,42 +1,31 @@
 //! Floco validates ***flo***ats against user-defined ***co***nstraints.
 //!
-//! # Quick Start
+//! # Quick Start with the Macro
 //!
 //! ```
-//! use floco::{Floco, Constrained};
+//! // These feature flags are required for the doctest to compile,
+//! // as it's treated as a separate crate.
+//! #![feature(associated_type_defaults)]
+//! #![feature(const_trait_impl)]
+//! #![feature(const_default)]
 //!
-//! // We want to represent a value as f64, but we don't want to allow:
-//! //      - values below 5.0f64
-//! //      - values above 7.2f64
+//! use floco::{constrained_type, Floco, Constrained};
 //!
-//! // We define an empty struct.
-//! // This won't contain data, but will contain validation criteria in its impl.
-//! struct Foo;
-//!
-//! // The Constrained trait defines the above constraints, an error type, and a default value.
-//! impl Constrained<f64> for Foo {
-//!     
-//!     type Error = &'static str;
-//!     
-//!     fn is_valid(value: f64) -> bool {
-//!         value >= 5.0f64 && value <= 7.2f64
-//!     }
-//!
-//!     fn emit_error(_value: f64) -> Self::Error {
-//!         "yikes this is a bad foo"
-//!     }
-//!     
-//!     // Optionally, you can set a custom default.
-//!     // Floco::<F, YourType>::Default will respect the default value impl for YourType.
-//!     fn get_default() -> f64 {
-//!         5.2f64
-//!      }
+//! // The macro generates the marker struct, the trait impl, and a type alias for you.
+//! constrained_type! {
+//!     /// A value representing a percentage, must be between 0.0 and 100.0.
+//!     pub type Percentage(f64) where |val| val >= 0.0 && val <= 100.0,
+//!     "Value must be a valid percentage [0.0, 100.0]"
 //! }
 //!
-//! // Now we can use Foo to constrain a Floco
-//! let this_will_be_ok = Floco::<f64, Foo>::try_new(6.8);
-//! let this_will_be_err = Floco::<f64, Foo>::try_new(4.2);
+//! // Now we can use our new type `Percentage`
+//! let ok = Percentage::try_new(99.5);
+//! assert!(ok.is_ok());
 //!
+//! let err = Percentage::try_new(101.0);
+//! assert!(err.is_err());
+//! // The default error is rich and informative!
+//! println!("{}", err.unwrap_err());
 //! ```
 //!
 //! # Overview
@@ -44,47 +33,14 @@
 //! This crate provides a struct that wraps a floating-point number alongside a PhantomData marker
 //! type. The marker type defines arbitrary validation conditions for the inner float.
 //! These validation conditions are invoked during construction, conversion, and deserialization.
-//!
-//! The marker type also provides an Error type and an optional default value (defaults to zero).
-//!
-//! Floco is no_std compatible by default, but has optional support for the standard library behind
-//! a feature flag. This doesn't add any functionality, just changes math ops from libm to std and
-//! changes the errors from thiserror-core to thiserror. Floco should compile on stable if std is
-//! enabled, but will require the [error_in_core][`eiclink`] feature for no_std builds.
-//!
-//! Floco is compatible with any type that implements the [float][`ntFloatlink`] trait from
-//! the num_traits crate. TryFrom conversions are implemented from f32 and f64 for
-//! convenience.
-//!
-//! # Roadmap
-//! - At some point I intend to implement the ops traits on the Floco struct.
-//! - At some point I intend to add a macro to reduce the newtype boilerplate.
-//! - I want to create a similar struct that also contains generic [uom][`uomlink`] dimensions, but might just put that in a separate crate.
-//! - Not sure what to do with the Copy trait. Need to think that through.
-//!
-//! # Alternative / Related Crates
-//! - [prae][`PraeLink`] uses a macro to create distinct types rather than making a single type generic across arbitrary marker impls. Prae is incompatible with no_std.
-//! - [tightness][`TightnessLink`] is a predecessor to prae.
-//! - [typed_floats][`TypedFloatLink`] provides 12 useful pre-made restricted float types. See the useful "Similar crates" section at the end of the TypedFloats readme.
-//!
-//! # Inspired By
-//! - [Tightness Driven Development in Rust][`TightnessPost`]
-//! - [this stackoverflow comment][`SOComment`]
-//! - [this reddit comment][`RedditComment`]
-//!
-//! [`PraeLink`]: https://github.com/teenjuna/prae
-//! [`TightnessLink`]: https://github.com/PabloMansanet/tightness
-//! [`TypedFloatLink`]: https://github.com/tdelmas/typed_floats
-//! [`TightnessPost`]: https://www.ecorax.net/tightness/
-//! [`RedditComment`]: https://www.reddit.com/r/rust/comments/abmilm/bounded_numeric_types/ed1fs0f/
-//! [`SOComment`]: https://stackoverflow.com/questions/57440412/implementing-constructor-function-in-rust-trait#comment101360200_57440412
-//! [`eiclink`]:  https://github.com/rust-lang/rust/issues/103765
-//! [`ntFloatlink`]: https://docs.rs/num-traits/latest/num_traits/float/trait.Float.html
-//! [`uomlink`]: https://github.com/iliekturtles/uom
 
 #![warn(missing_docs)]
 #![no_std]
+// Allows `type Error = ...` in the `Constrained` trait.
 #![feature(associated_type_defaults)]
+// Allows `const` items in traits, like `const DEFAULT: F` and `const fn is_valid`.
+#![feature(const_trait_impl)]
+#![feature(const_default)]
 
 // Declare the `core` module, making its contents available within the crate.
 pub mod core;

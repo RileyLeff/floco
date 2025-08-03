@@ -3,7 +3,6 @@
 use core::{
     fmt::{Debug, Display},
     marker::PhantomData,
-    // Note: AddAssign, SubAssign, etc., have been removed as they are infallible traits.
     ops::{Add, Deref, Div, Mul, Sub},
 };
 
@@ -50,9 +49,13 @@ where
         self.0 = new_val;
     }
 
-    /// Fallible constructor. Equivalent to the try_new in the marker type's impl.
+    /// Fallible constructor. This is the idiomatic way to create a Floco.
     pub fn try_new(value: F) -> Result<Self, C::Error> {
-        C::try_new(value)
+        if C::is_valid(value) {
+            Ok(Floco(value, PhantomData))
+        } else {
+            Err(C::emit_error(value))
+        }
     }
 }
 
@@ -72,7 +75,8 @@ macro_rules! impl_ops {
         {
             type Output = Result<Self, C::Error>;
             fn $func(self, other: Self) -> Self::Output {
-                C::try_new(self.0.$func(other.0))
+                // Use the inherent try_new method for construction.
+                Self::try_new(self.0.$func(other.0))
             }
         }
     };
@@ -106,7 +110,7 @@ where
         D: Deserializer<'de>,
     {
         let value = F::deserialize(deserializer)?;
-        C::try_new(value).map_err(serde::de::Error::custom)
+        Self::try_new(value).map_err(serde::de::Error::custom)
     }
 }
 
@@ -116,13 +120,15 @@ where
     C: Constrained<F>,
 {
     fn default() -> Self {
-        let default_val = C::get_default();
-        C::try_new(default_val)
-            .expect("The default value provided by the Constrained impl was invalid.")
+        // We can call try_new here because it's validated at compile-time by the macro.
+        // If the default is invalid, the code will not compile.
+        Self::try_new(C::DEFAULT).unwrap()
     }
 }
 
 /// Defines valid conditions and errors for a Floco marker type.
+// FIX: The trait itself is now marked as #[const_trait].
+#[const_trait]
 pub trait Constrained<F>: Sized
 where
     F: Float + Display + Debug,
@@ -130,79 +136,104 @@ where
     /// The error type returned on validation failure. Defaults to `ValidationError`.
     type Error: Display + Debug = ValidationError<F>;
 
-    /// Function to determine whether a value is valid.
+    /// The default value for this constrained type.
+    const DEFAULT: F;
+
+    // FIX: The `const` keyword is removed from the function signature inside the trait.
+    /// A compile-time-compatible function to determine if a value is valid.
     fn is_valid(value: F) -> bool;
 
     /// Define the error behavior when values do not meet the constraint criteria.
     fn emit_error(value: F) -> Self::Error;
-
-    /// Define a default value for a constraint type. Defaults to `F::zero()`.
-    fn get_default() -> F {
-        F::zero()
-    }
-
-    /// Fallible constructor for a Floco of this constraint type.
-    fn try_new(value: F) -> Result<Floco<F, Self>, Self::Error> {
-        if Self::is_valid(value) {
-            Ok(Floco(value, PhantomData))
-        } else {
-            Err(Self::emit_error(value))
-        }
-    }
 }
 
-/// A convenience macro to quickly define new constrained types.
+/// A convenience macro to quickly define new constrained types with compile-time default validation.
 #[macro_export]
 macro_rules! constrained_type {
-    ($(#[$outer:meta])* $vis:vis type $TypeName:ident($InnerType:ty) where |$val_id:ident| $validator:expr, $error_msg:expr) => {
+    // ARM 1: User provides an explicit default value.
+    ($(#[$outer:meta])* $vis:vis type $TypeName:ident($InnerType:ty) where |$val_id:ident| $validator:expr, $error_msg:expr, default: $default_val:expr) => {
         ::paste::paste! {
             #[doc = "A marker struct for the " $TypeName " constrained type."]
             #[derive(Debug, Copy, Clone)]
             $vis struct [<$TypeName Constraint>];
 
-            impl $crate::Constrained<$InnerType> for [<$TypeName Constraint>] {
+            // FIX: The `impl` block for a const trait must also be `const`.
+            impl const $crate::Constrained<$InnerType> for [<$TypeName Constraint>] {
+                const DEFAULT: $InnerType = $default_val;
+
                 fn is_valid($val_id: $InnerType) -> bool {
                     $validator
                 }
 
+                // emit_error is not a const function.
                 fn emit_error(value: $InnerType) -> Self::Error {
-                    $crate::ValidationError {
-                        value,
-                        message: $error_msg,
-                    }
+                    $crate::ValidationError { value, message: $error_msg }
                 }
             }
+
+            const _: () = {
+                assert!([<$TypeName Constraint>]::is_valid([<$TypeName Constraint>]::DEFAULT), "The provided default value does not meet the constraint criteria.");
+            };
 
             $(#[$outer])*
             $vis type $TypeName = $crate::Floco<$InnerType, [<$TypeName Constraint>]>;
 
-            // THE NEW ADDITION:
-            // Automatically create an error type alias, e.g., `TurgorError`.
+            #[allow(dead_code)] // The alias is part of the public API, even if unused in some contexts.
             #[doc = "The associated error type for the `" $TypeName "` constrained type."]
             $vis type [<$TypeName Error>] = <[<$TypeName Constraint>] as $crate::Constrained<$InnerType>>::Error;
+        }
+    };
+    // ARM 2: No default value is provided. Macro will try to inherit from the inner type.
+    ($(#[$outer:meta])* $vis:vis type $TypeName:ident($InnerType:ty) where |$val_id:ident| $validator:expr, $error_msg:expr) => {
+        $crate::constrained_type! {
+            $(#[$outer])* $vis type $TypeName($InnerType)
+            where |$val_id| $validator,
+            $error_msg,
+            // The `const_default` feature is required for this call to work in a const context.
+            default: <$InnerType as Default>::default()
         }
     };
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{constrained_type, Constrained, Floco};
+    // Import the trait to make its items available in the test scope.
+    use crate::constrained_type;
+    use crate::Constrained;
 
     constrained_type! {
-        /// RWC must be between 0.0 and 1.0
-        pub type RWC(f64) where |val| { val >= 0.0 && val <= 1.0 },
-        "RWC must be a proportion [0.0, 1.0]"
+        // Removed unnecessary braces around the validation expression.
+        pub type PositiveF64(f64) where |val| val > 0.0,
+        "Value must be positive.",
+        default: 1.0
+    }
+
+    constrained_type! {
+        pub type NonNegativeF64(f64) where |val| val >= 0.0,
+        "Value must be non-negative."
     }
 
     #[test]
-    fn macro_creates_valid_type() {
-        let rwc = RWC::try_new(0.5).unwrap();
-        assert_eq!(rwc.get(), 0.5);
+    fn default_value_is_correct() {
+        assert_eq!(*PositiveF64::default(), 1.0);
+        assert_eq!(*NonNegativeF64::default(), 0.0);
     }
 
     #[test]
-    fn macro_type_fails_with_structured_error() {
-        let err = RWC::try_new(1.1).unwrap_err();
-        assert_eq!(err.value, 1.1);
+    fn try_new_is_idiomatic() {
+        let p = PositiveF64::try_new(10.5).unwrap();
+        assert_eq!(*p, 10.5);
+
+        let err_res = PositiveF64::try_new(-5.0);
+        assert!(err_res.is_err());
+    }
+
+    // FIX: Add a test that uses the generated error alias to silence warnings.
+    #[test]
+    fn error_alias_is_usable() {
+        // We explicitly type the error variable with the generated alias.
+        // This marks the alias as "used".
+        let err: PositiveF64Error = PositiveF64::try_new(-1.0).unwrap_err();
+        assert_eq!(err.value, -1.0);
     }
 }
