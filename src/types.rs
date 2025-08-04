@@ -2,7 +2,7 @@
 
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
-use core::ops::{Add, Div, Mul, Sub, Deref};
+use core::ops::{Add, Deref, Div, Mul, Sub};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 
@@ -37,7 +37,9 @@ where
 
 impl<T, C> Deref for Floco<T, C> {
     type Target = T;
-    fn deref(&self) -> &Self::Target { &self.0 }
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 // Serde implementations
