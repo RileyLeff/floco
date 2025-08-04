@@ -6,17 +6,16 @@ description = "A wrapper for floats with user-defined constraints."
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-num-traits = { version = "0.2", default-features = false }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 thiserror = "2.0.12"
-
-# `paste` is now a regular dependency because it's used by our public macro.
 paste = "1.0"
 
-[dev-dependencies]
-half = { version = "2.2", default-features = false }
-serde-json-core = "0.5"
-
 [features]
-default = ["libm"]
-libm = ["num-traits/libm"]
+default = []
+# This feature enables runtime-checked defaults for compatibility with
+# complex types like `uom::Quantity` whose operations are not `const`.
+runtime-defaults = []
+
+[dev-dependencies]
+uom = { version = "0.37.0", default-features = false, features = ["f64", "std", "si", "serde"] }
+serde_json = "1.0"

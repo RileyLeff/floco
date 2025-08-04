@@ -8,41 +8,7 @@
 [Apache Badge]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
 [Apache Link]: https://opensource.org/licenses/Apache-2.0
 
-Floco validates ***flo***ats against user-defined ***co***nstraints.
-
-## Quick Start with the Macro
-
-```rust
-// These feature flags are required for the doctest to compile,
-// as it's treated as a separate crate.
-#![feature(associated_type_defaults)]
-#![feature(const_trait_impl)]
-#![feature(const_default)]
-
-use floco::{constrained_type, Floco, Constrained};
-
-// The macro generates the marker struct, the trait impl, and a type alias for you.
-constrained_type! {
-    /// A value representing a percentage, must be between 0.0 and 100.0.
-    pub type Percentage(f64) where |val| val >= 0.0 && val <= 100.0,
-    "Value must be a valid percentage [0.0, 100.0]"
-}
-
-// Now we can use our new type `Percentage`
-let ok = Percentage::try_new(99.5);
-assert!(ok.is_ok());
-
-let err = Percentage::try_new(101.0);
-assert!(err.is_err());
-// The default error is rich and informative!
-println!("{}", err.unwrap_err());
-```
-
-## Overview
-
-This crate provides a struct that wraps a floating-point number alongside a PhantomData marker
-type. The marker type defines arbitrary validation conditions for the inner float.
-These validation conditions are invoked during construction, conversion, and deserialization.
+(Docs will go here)
 
 ## License
 
