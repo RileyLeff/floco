@@ -2,7 +2,7 @@
 
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
-use core::ops::{Add, Deref, Div, Mul, Sub};
+use core::ops::{Add, Div, Mul, Sub, Deref};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 
@@ -37,9 +37,7 @@ where
 
 impl<T, C> Deref for Floco<T, C> {
     type Target = T;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
+    fn deref(&self) -> &Self::Target { &self.0 }
 }
 
 // Serde implementations
@@ -115,23 +113,10 @@ where
     }
 }
 
-/// Defines valid conditions and errors for a Floco marker type. (Compile-time version)
-#[cfg(not(feature = "runtime-defaults"))]
-#[const_trait]
-pub trait Constrained<T>: Sized
-where
-    T: PartialOrd + Debug + Copy,
-{
-    /// The error type returned on validation failure.
-    type Error: Display + Debug = ValidationError<T>;
-    /// A compile-time-compatible function to determine if a value is valid.
-    fn is_valid(value: T) -> bool;
-    /// Defines the error behavior when values do not meet the constraint criteria.
-    fn emit_error(value: T) -> Self::Error;
-}
-
-/// Defines valid conditions and errors for a Floco marker type. (Runtime version)
-#[cfg(feature = "runtime-defaults")]
+/// Defines valid conditions and errors for a Floco marker type.
+/// This trait is a `const_trait` by default and a regular `trait`
+/// when the `runtime-defaults` feature is enabled.
+#[cfg_attr(not(feature = "runtime-defaults"), const_trait)]
 pub trait Constrained<T>: Sized
 where
     T: PartialOrd + Debug + Copy,
@@ -139,6 +124,7 @@ where
     /// The error type returned on validation failure.
     type Error: Display + Debug = ValidationError<T>;
     /// A function to determine if a value is valid.
+    /// This is `const` when not in `runtime-defaults` mode.
     fn is_valid(value: T) -> bool;
     /// Defines the error behavior when values do not meet the constraint criteria.
     fn emit_error(value: T) -> Self::Error;
