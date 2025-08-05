@@ -47,9 +47,9 @@
 #![cfg_attr(not(feature = "runtime-defaults"), feature(const_default))]
 #![feature(associated_type_defaults)]
 
-// This loads everything from `src/macros.rs` and makes it available.
-#[macro_use]
-mod macros;
+/// Contains all procedural macros for defining new types and operations.
+#[macro_use] // This tells the compiler to pull the macros into the crate root.
+pub mod macros;
 
 /// Contains the core data structures and traits.
 pub mod types;

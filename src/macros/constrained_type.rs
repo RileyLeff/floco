@@ -1,15 +1,5 @@
-// src/macros.rs
+// src/macros/constrained_type.rs
 
-//
-// =================================================================================
-// HELPER MACROS
-// These are the key to the solution.
-// =================================================================================
-//
-
-/// A helper macro that wraps an `impl` block and adds the `const` keyword.
-/// This hides the `const` keyword from the parser when it's peeking into
-/// a disabled `#[cfg]` block, solving the experimental feature error.
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __floco_const_impl {
@@ -18,16 +8,10 @@ macro_rules! __floco_const_impl {
     };
 }
 
-//
-// =================================================================================
-// MACRO: __floco_internal_newtype_impl (The internal helper)
-// =================================================================================
-//
-
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __floco_internal_newtype_impl {
-    (
+        (
         $(#[$outer:meta])*,
         $vis:vis,
         $TypeName:ident,
@@ -82,16 +66,9 @@ macro_rules! __floco_internal_newtype_impl {
     };
 }
 
-//
-// =================================================================================
-// MACRO: constrained_type! (The public-facing macro)
-// =================================================================================
-//
-
-/// A macro to create new, validated types that wrap a primitive or other value.
 #[macro_export]
 macro_rules! constrained_type {
-    // ARM 1: User provides an explicit default value.
+// ARM 1: User provides an explicit default value.
     ($(#[$outer:meta])* $vis:vis type $TypeName:ident($InnerType:ty) where |$val_id:ident| $validator:expr, $error_msg:expr, default: $default_val:expr) => {
         $crate::__floco_internal_newtype_impl!{
             $(#[$outer])*,
@@ -141,63 +118,5 @@ macro_rules! constrained_type {
                 Self::try_new(<$InnerType as Default>::default()).expect("The inner type's default value is invalid.")
             }
         }
-    };
-}
-
-//
-// =================================================================================
-// MACRO: impl_dimensional_ops!
-// =================================================================================
-//
-
-/// A macro to implement arithmetic operations between different `Floco` newtypes,
-/// enabling dimensionally-aware calculations with libraries like `uom`.
-#[macro_export]
-macro_rules! impl_dimensional_ops {
-    ($Lhs:ty, $Trait:ident, $func:ident, $Rhs:ty => $Result:ty) => {
-        impl ::core::ops::$Trait<$Rhs> for $Lhs {
-            type Output =
-                Result<$Result, $crate::ValidationError<<$Result as ::core::ops::Deref>::Target>>;
-            fn $func(self, other: $Rhs) -> Self::Output {
-                let result_inner = (*self).$func(*other);
-                <$Result>::try_new(result_inner)
-            }
-        }
-    };
-}
-
-/// Implements standard arithmetic operations for a Floco newtype where the
-/// output of the operation is the same as the input type.
-///
-/// This is the idiomatic way to handle arithmetic for a single constrained type,
-/// ensuring that the result of any operation is re-validated against the
-/// type's own constraints. This is the correct tool for "same-type" math.
-///
-/// # Example
-///
-/// ```rust,ignore
-/// // Implements `+`, `-`, `*`, and `/` for the `MyType` newtype.
-/// impl_arithmetic_ops!(MyType, Add, add, Sub, sub, Mul, mul, Div, div);
-/// ```
-#[macro_export]
-macro_rules! impl_arithmetic_ops {
-    // The matcher uses `+` to require at least one pair of (Trait, function).
-    ($TypeName:ty, $($Trait:ident, $func:ident),+) => {
-        // The `$()*` block repeats the implementation for each pair provided.
-        $(
-            impl ::core::ops::$Trait for $TypeName {
-                // The output is a Result containing the type itself, or a validation error.
-                type Output = Result<$TypeName, $crate::ValidationError<<$TypeName as ::core::ops::Deref>::Target>>;
-
-                fn $func(self, other: Self) -> Self::Output {
-                    // 1. Perform the operation on the inner values.
-                    let result_inner = self.get().$func(other.get());
-
-                    // 2. Re-validate the result against the type's OWN constraints.
-                    // This is the core safety guarantee.
-                    <$TypeName>::try_new(result_inner)
-                }
-            }
-        )+
     };
 }
