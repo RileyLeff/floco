@@ -23,7 +23,7 @@ macro_rules! impl_arithmetic_ops {
 
                 fn $func(self, other: Self) -> Self::Output {
                     // 1. Perform the operation on the inner values.
-                    let result_inner = self.get().$func(other.get());
+                    let result_inner = self.get().clone().$func(other.get().clone());
 
                     // 2. Re-validate the result against the type's OWN constraints.
                     // This is the core safety guarantee.

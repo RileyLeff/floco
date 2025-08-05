@@ -22,9 +22,18 @@ The library is designed to prevent invalid data from ever being created, catchin
 errors at the earliest possible moment and using Rust's powerful type system to
 enforce business logic and physical constraints throughout your program.
 
-### Examples
+#### Features
 
-A simple type, with its default value validated at compile-time:
+*   **Type Safety:** Create new types with custom validation rules, ensuring that invalid data is never created.
+*   **Ergonomic API:** The `constrained_type!` macro is designed to be intuitive and easy to use.
+*   **`serde` Support:** Automatically derive `Serialize` and `Deserialize` for your constrained types.
+*   **Arithmetic Operations:** Implement standard arithmetic operations for your types with the `impl_arithmetic_ops!` macro.
+*   **Dimensional Analysis:** Use the `impl_dimensional_ops!` macro to perform operations between different constrained types, perfect for working with libraries like `uom`.
+*   **`const` Validation:** With the `const-validation` feature, you can validate default values at compile time.
+
+#### Design Philosophy
+
+The core idea behind `floco` is to make invalid states unrepresentable. By creating new types with specific constraints, you can leverage Rust's type system to ensure that your data is always valid. This approach helps to catch errors at compile time, rather than at runtime, leading to more robust and reliable code.
 
 ### Examples
 

@@ -8,7 +8,7 @@ macro_rules! impl_dimensional_ops {
             type Output =
                 Result<$Result, $crate::ValidationError<<$Result as ::core::ops::Deref>::Target>>;
             fn $func(self, other: $Rhs) -> Self::Output {
-                let result_inner = (*self).$func(*other);
+                let result_inner = self.into_inner().$func(other.into_inner());
                 <$Result>::try_new(result_inner)
             }
         }

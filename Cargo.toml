@@ -11,11 +11,17 @@ thiserror = "2.0.12"
 paste = "1.0"
 
 [features]
+# By default, floco uses runtime validation on stable Rust.
+# This provides the widest compatibility, especially for types like `uom::Quantity`.
 default = []
-# This feature enables runtime-checked defaults for compatibility with
-# complex types like `uom::Quantity` whose operations are not `const`.
-runtime-defaults = []
+
+# The `const-validation` feature enables compile-time validation of default values.
+# This requires a nightly Rust toolchain and the following features:
+# `#![feature(const_trait_impl)]`
+# `#![feature(const_default)]`
+const-validation = []
 
 [dev-dependencies]
 uom = { version = "0.37.0", default-features = false, features = ["f64", "std", "si", "serde"] }
 serde_json = "1.0"
+trybuild = "1.0"
