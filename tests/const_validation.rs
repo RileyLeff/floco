@@ -3,10 +3,9 @@
 
 use floco::constrained_type;
 
-// This test file is specifically for the `const-validation` feature.
-
+// Use the new `for` syntax
 constrained_type! {
-    pub type CompileTimeChecked(i32) where |i| *i > 0, "Value must be positive.", default: 1
+    pub type CompileTimeChecked for i32 where |i| *i > 0, "Value must be positive.", default: 1
 }
 
 #[test]

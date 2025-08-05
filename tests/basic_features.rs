@@ -4,8 +4,8 @@
 #![cfg_attr(feature = "const-validation", feature(const_default))]
 #![feature(associated_type_defaults)]
 
-use floco::constrained_type;
 use core::fmt::Debug;
+use floco::constrained_type;
 
 // These definitions now work on stable Rust by default.
 // The `const-validation` feature will add compile-time checks for defaults.

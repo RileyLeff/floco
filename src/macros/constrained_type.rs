@@ -1,5 +1,14 @@
 // src/macros/constrained_type.rs
 
+// This helper macro must be public for the `const-validation` feature path to work in tests.
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __floco_const_impl {
+    ($($body:tt)*) => {
+        impl const $($body)*
+    };
+}
+
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __floco_internal_newtype_impl {
@@ -81,16 +90,16 @@ macro_rules! __floco_internal_newtype_impl {
     };
 }
 
+/// Creates a new, validated type from an existing one. See the crate-level documentation for examples.
 #[macro_export]
 macro_rules! constrained_type {
-    // With default value
-    ($(#[$outer:meta])* $vis:vis type $TypeName:ident $(<$($gen:tt)+>)? for $InnerType:ty where |$val_id:ident| $validator:expr, $error_msg:expr, default: $default_val:expr) => {
+    // ARM 1: Generic, with default
+    ($(#[$outer:meta])* $vis:vis type $TypeName:ident < $($gen:tt)+ > for $InnerType:ty where |$val_id:ident| $validator:expr, $error_msg:expr, default: $default_val:expr) => {
         $crate::__floco_internal_newtype_impl!{
-            $(#[$outer])*, $vis, $TypeName, $(<$($gen)+>)?, $InnerType, |$val_id| $validator, $error_msg
+            $(#[$outer])*, $vis, $TypeName, <$($gen)+>, $InnerType, |$val_id| $validator, $error_msg
         }
-
         ::paste::paste! {
-            impl$(< $($gen)+ >)? Default for $TypeName$(< $($gen)+ >)? {
+            impl< $($gen)+ > Default for $TypeName<$($gen)+> {
                 fn default() -> Self {
                     Self::try_new($default_val).expect("The provided default value is invalid.")
                 }
@@ -98,17 +107,40 @@ macro_rules! constrained_type {
         }
     };
 
-    // No default value
-    ($(#[$outer:meta])* $vis:vis type $TypeName:ident $(<$($gen:tt)+>)? for $InnerType:ty where |$val_id:ident| $validator:expr, $error_msg:expr) => {
+    // ARM 2: Generic, no default
+    ($(#[$outer:meta])* $vis:vis type $TypeName:ident < $($gen:tt)+ > for $InnerType:ty where |$val_id:ident| $validator:expr, $error_msg:expr) => {
         $crate::__floco_internal_newtype_impl!{
-            $(#[$outer])*, $vis, $TypeName, $(<$($gen)+>)?, $InnerType, |$val_id| $validator, $error_msg
+            $(#[$outer])*, $vis, $TypeName, <$($gen)+>, $InnerType, |$val_id| $validator, $error_msg
         }
-
         ::paste::paste! {
-            impl$(< $($gen)+ >)? Default for $TypeName$(< $($gen)+ >)? where $InnerType: Default {
+            impl< $($gen)+ > Default for $TypeName<$($gen)+> where $InnerType: Default {
                 fn default() -> Self {
                     Self::try_new(<$InnerType as Default>::default()).expect("The default value of the inner type is invalid.")
                 }
+            }
+        }
+    };
+
+    // ARM 3: Non-generic, with default
+    ($(#[$outer:meta])* $vis:vis type $TypeName:ident for $InnerType:ty where |$val_id:ident| $validator:expr, $error_msg:expr, default: $default_val:expr) => {
+        $crate::__floco_internal_newtype_impl!{
+            $(#[$outer])*, $vis, $TypeName, , $InnerType, |$val_id| $validator, $error_msg
+        }
+        impl Default for $TypeName {
+            fn default() -> Self {
+                Self::try_new($default_val).expect("The provided default value is invalid.")
+            }
+        }
+    };
+
+    // ARM 4: Non-generic, no default
+    ($(#[$outer:meta])* $vis:vis type $TypeName:ident for $InnerType:ty where |$val_id:ident| $validator:expr, $error_msg:expr) => {
+        $crate::__floco_internal_newtype_impl!{
+            $(#[$outer])*, $vis, $TypeName, , $InnerType, |$val_id| $validator, $error_msg
+        }
+        impl Default for $TypeName where $InnerType: Default {
+            fn default() -> Self {
+                Self::try_new(<$InnerType as Default>::default()).expect("The default value of the inner type is invalid.")
             }
         }
     };
