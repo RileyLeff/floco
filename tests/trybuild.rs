@@ -1,4 +1,4 @@
-#![cfg(all(feature = "const-validation", not(stable)))]
+#![cfg(feature = "const-validation")]
 
 #[test]
 fn test_compile_fails() {

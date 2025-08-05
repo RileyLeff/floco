@@ -5,21 +5,23 @@
 #![feature(associated_type_defaults)]
 
 use floco::constrained_type;
+use core::fmt::Debug;
 
 // These definitions now work on stable Rust by default.
 // The `const-validation` feature will add compile-time checks for defaults.
-constrained_type! { pub type PositiveF64(f64) where |val| *val > 0.0, "Value must be positive.", default: 1.0 }
-constrained_type! { pub type NonNegativeI32(i32) where |i| *i >= 0, "Value must be non-negative." }
-constrained_type! { pub type Percentage(f64) where |p| *p >= 0.0 && *p <= 100.0, "Value must be between 0.0 and 100.0.", default: 0.0 }
+constrained_type! { pub type PositiveF64 for f64 where |val| *val > 0.0, "Value must be positive.", default: 1.0 }
+constrained_type! { pub type NonNegativeI32 for i32 where |i| *i >= 0, "Value must be non-negative." }
+constrained_type! { pub type Percentage for f64 where |p| *p >= 0.0 && *p <= 100.0, "Value must be between 0.0 and 100.0.", default: 0.0 }
 
 #[cfg(not(feature = "const-validation"))]
 constrained_type! {
-    pub type NonEmptyString(String) where |s| !s.is_empty(), "String must not be empty."
+    pub type NonEmptyString for String where |s| !s.is_empty(), "String must not be empty."
 }
 
+// The generic parameter `T` now has the required bounds.
 #[cfg(not(feature = "const-validation"))]
 constrained_type! {
-    pub type NonEmptyVec<T>(Vec<T>) where |v| !v.is_empty(), "Vector must not be empty."
+    pub type NonEmptyVec<T: Clone + Debug> for Vec<T> where |v| !v.is_empty(), "Vector must not be empty."
 }
 
 #[test]

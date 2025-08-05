@@ -4,10 +4,11 @@
 #![cfg_attr(feature = "const-validation", feature(const_default))]
 #![feature(associated_type_defaults)]
 
+use core::fmt::Debug;
 use floco::{constrained_type, impl_arithmetic_ops};
 
 constrained_type! {
-    pub type LimitedInt(i32) where |i| *i >= -100 && *i <= 100,
+    pub type LimitedInt for i32 where |i| *i >= -100 && *i <= 100,
     "Value must be between -100 and 100."
 }
 

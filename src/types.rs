@@ -10,9 +10,7 @@ use thiserror::Error;
 #[derive(Debug, Error, Clone)]
 #[error("Validation failed for value '{value:?}': {message}")]
 pub struct ValidationError<T: Debug> {
-    /// The value that failed the constraint check.
     pub value: T,
-    /// A static string describing the constraint that was violated.
     pub message: &'static str,
 }
 
@@ -22,7 +20,8 @@ pub struct Floco<T, C>(pub T, pub PhantomData<C>);
 
 impl<T, C> Floco<T, C>
 where
-    T: PartialOrd + Debug + Clone,
+    // The `PartialOrd` bound has been removed to support types like `Vec<T>`.
+    T: Debug + Clone,
     C: Constrained<T>,
 {
     /// Fallible constructor. This is the idiomatic way to create a Floco.
@@ -45,7 +44,7 @@ impl<T, C> Deref for Floco<T, C> {
 // Serde implementations
 impl<T, C> Serialize for Floco<T, C>
 where
-    T: PartialOrd + Debug + Clone + Serialize,
+    T: Debug + Clone + Serialize,
     C: Constrained<T>,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -58,7 +57,7 @@ where
 
 impl<'de, T, C> Deserialize<'de> for Floco<T, C>
 where
-    T: PartialOrd + Debug + Clone + Deserialize<'de>,
+    T: Debug + Clone + Deserialize<'de>,
     C: Constrained<T>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -71,6 +70,7 @@ where
 }
 
 // Arithmetic implementations for the core Floco type
+// These retain their `PartialOrd` bound because it makes sense for arithmetic.
 impl<T, C> Add for Floco<T, C>
 where
     T: Add<Output = T> + PartialOrd + Debug + Clone,
@@ -116,18 +116,13 @@ where
 }
 
 /// Defines valid conditions and errors for a Floco marker type.
-/// This trait is a `const_trait` by default and a regular `trait`
-/// when the `const-validation` feature is enabled.
 #[cfg_attr(feature = "const-validation", const_trait)]
 pub trait Constrained<T>: Sized
 where
-    T: PartialOrd + Debug + Clone,
+    // The `PartialOrd` bound has been removed here as well.
+    T: Debug + Clone,
 {
-    /// The error type returned on validation failure.
     type Error: Display + Debug = ValidationError<T>;
-    /// A function to determine if a value is valid.
-    /// This is `const` when not in `const-validation` mode.
     fn is_valid(value: &T) -> bool;
-    /// Defines the error behavior when values do not meet the constraint criteria.
     fn emit_error(value: T) -> Self::Error;
 }
