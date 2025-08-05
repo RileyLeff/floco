@@ -26,6 +26,10 @@ enforce business logic and physical constraints throughout your program.
 
 A simple type, with its default value validated at compile-time:
 
+### Examples
+
+A simple type, with its default value validated at compile-time:
+
 ```rust
 use floco::constrained_type;
 

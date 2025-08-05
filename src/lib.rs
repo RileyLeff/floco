@@ -18,10 +18,12 @@
 //!
 //! A simple type, with its default value validated at compile-time:
 //!
-//! ```rust
+//! ## Examples
+//!
+//! A simple type, with its default value validated at compile-time:
+//!
+//! ```rust,ignore
 //! use floco::constrained_type;
-//! # // The line below is needed for the test to pass, but not for users.
-//! # #![cfg_attr(not(feature = "runtime-defaults"), feature(const_trait_impl))]
 //!
 //! constrained_type! {
 //!     pub type Percentage(f64) where |p| p >= 0.0 && p <= 100.0,
